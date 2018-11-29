@@ -27,6 +27,20 @@ module.exports = class bitforex extends Exchange {
                 'fetchOrders': false,
                 'fetchOpenOrders': true,
                 'fetchClosedOrders': true,
+                'fetchOHLCV':true,
+            },
+            'timeframes': {
+                '1m': '1min',
+                '5m': '5min',
+                '15m': '15min',
+                '30m': '30min',
+                '1h': '1hour',
+                '2h': '2hour',
+                '4h': '4hour',
+                '12h': '12hour',
+                '1d': '1day',
+                '1w': '1week',
+                '1M': '1month',
             },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/44310033-69e9e600-a3d8-11e8-873d-54d74d1bc4e4.jpg',
@@ -310,6 +324,23 @@ module.exports = class bitforex extends Exchange {
         let market = this.market (symbol);
         let response = await this.publicGetApiV1MarketTrades (this.extend (request, params));
         return this.parseTrades (response['data'], market, since, limit);
+    }
+
+    async fetchOHLCV(symbol, timeframe = '1m', since = undefined, limit = undefined, params = {}) {
+        await this.loadMarkets();
+        if (limit === undefined)
+            limit = 100;
+        let market = this.market(symbol);
+        let v2id = market['id'];
+        let request = {
+            'symbol': v2id,
+            'ktype': this.timeframes[timeframe],
+            'size': 0,
+        };
+        if (since !== undefined)
+            request['size'] = since;
+        let response = await this.publicGetApiV1MarketKline(this.extend(request, params));
+        return this.parseOHLCVs(response['data'], market, timeframe, since, limit);
     }
 
     async fetchBalance (params = {}) {
